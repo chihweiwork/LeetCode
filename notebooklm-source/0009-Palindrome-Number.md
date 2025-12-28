@@ -1,69 +1,98 @@
-# LeetCode #9 - Palindrome Number (回文數) 教學
+# 0009 - Palindrome Number (迴文數)
 
-嗨，同學！今天我們要來解 LeetCode 第 9 題：Palindrome Number。這是一個很經典的入門題，可以幫助我們釐清對問題的定義和思考邊界條件。
+## 1. 題目理解 (Problem Comprehension)
 
-## 1. 題目理解
+給你一個整數 `x`，如果 `x` 是一個迴文整數，返回 `true`；否則，返回 `false`。
 
-首先，我們要弄清楚什麼是「回文數」。
+迴文數是指正序（從左向右）和倒序（從右向左）讀都是一樣的整數。
 
-回文的意思是「正著讀跟反著讀都一樣」。例如，`121` 倒過來還是 `121`，所以它就是一個回文數。但 `123` 倒過來是 `321`，它們不一樣，所以 `123` 就不是回文數。
+**輸入與輸出格式：**
+*   **輸入 (Input):** `x` (int)
+*   **輸出 (Output):** `True` 或 `False` (bool)
 
-題目有幾個特別的提示：
--   **負數**：例如 `-121`。倒過來會變成 `121-`，這跟 `-121` 完全不同，所以題目暗示負數一律不是回文數。
--   **結尾是 0 的數字**：例如 `10`。倒過來是 `01`，也就是 `1`。`10` 和 `1` 不相等，所以它也不是回文數。唯一的例外是 `0` 本身，`0` 倒過來還是 `0`，所以 `0` 是回文數。
+**範例：**
+*   `121` -> `True`
+*   `-121` -> `False` (從右向左讀為 `121-`，不相等)
+*   `10` -> `False` (從右向左讀為 `01`)
 
-## 2. 思考過程 & 演算法選擇
+**進階挑戰：**
+你能不將整數轉為字串來解決這個問題嗎？
 
-好，現在我們來想想要怎麼用程式解決這個問題。
+## 2. 思路分析 (Thought Process)
 
-我們的目標是：**比對一個數字和它反轉後的樣子是否相同。**
+### 直觀解法：轉為字串
 
-最直覺、也最符合 Python 精神 (Pythonic) 的方法是什麼呢？就是把數字當成「文字」來處理！
+最簡單的方法是把數字轉成字串，然後檢查字串是否跟反轉後的自己相等。
+但在面試中，面試官通常希望你用數學方法解決，不使用字串轉換。
 
-1.  **處理邊界情況 (Edge Cases)**：根據我們剛剛的分析，我們可以先把那些肯定不是回文數的情況過濾掉，這樣可以讓程式更有效率，邏輯也更清楚。
-    -   如果數字是負數 (`x < 0`)，直接回傳 `False`。
-    -   如果數字的最後一位是 `0`，且這個數字不為 `0` 本身 (`x % 10 == 0 and x != 0`)，那它也不可能是回文數，直接回傳 `False`。
+### 優化思路：反轉一半數字
 
-2.  **核心演算法 - 轉換成字串**：
-    -   把數字轉換成字串。例如，整數 `121` 變成字串 `"121"`。
-    -   在 Python 中，反轉一個字串非常簡單，我們可以使用切片 (slicing) `[::-1]`。`"121"[::-1]` 就會得到 `"121"`。
-    -   最後，我們只需要比較原來的字串和反轉後的字串是否相等。如果相等，它就是回文數！
+我們可以參考「反轉整數」的做法，但為了避免反轉後數字太大造成溢位（雖然 Python 不會溢位，但在其他語言會），我們只需要**反轉一半**的數字。
 
-這個方法非常簡單直接，程式碼也很乾淨，可讀性超高。在 Python 中，這通常是解決這類問題的首選。
+**核心邏輯：**
+1.  **排除明顯不符合的情況**：
+    *   負數一定不是迴文。
+    *   如果數字最後一位是 0，除非該數字就是 0，否則一定不是迴文（因為開頭不會是 0）。
+2.  **反轉後一半**：
+    *   將數字 `x` 的後半段反轉成 `reversed_half`。
+    *   如何知道已經反轉到一半了？當 `x` 變得小於或等於 `reversed_half` 時。
+3.  **比較**：
+    *   如果數字位數是偶數（如 1221），則 `x == reversed_half` (12 == 12)。
+    *   如果數字位數是奇數（如 121），最後會變成 `x = 1`, `reversed_half = 12`。此時中間的數字不影響迴文，所以我們比較 `x == reversed_half // 10` (1 == 1)。
 
-## 3. 程式碼實現
+## 3. 演算法設計 (Algorithm Design)
 
-這是在 `mylearning/0009-Palindrome-Number.py` 中的解答：
+我們採用 **反轉一半數字** 的方法。
+
+**偽代碼 (Pseudo-code):**
+
+```text
+Function isPalindrome(x):
+    # 排除特殊情況
+    If x < 0 OR (x % 10 == 0 AND x != 0):
+        Return False
+    
+    Initialize reversed_half = 0
+    While x > reversed_half:
+        # 取出 x 的最後一位並加入 reversed_half
+        reversed_half = reversed_half * 10 + (x % 10)
+        x = x // 10
+        
+    # 當長度為奇數時，藉由 reversed_half // 10 去掉中間位數
+    Return x == reversed_half OR x == reversed_half // 10
+```
+
+**複雜度分析：**
+
+*   **時間複雜度 (Time Complexity): O(log10(x))**
+    *   我們只處理了數字的一半位數，所以時間是 O(log10(x) / 2)，簡化為 O(log10(x))。
+*   **空間複雜度 (Space Complexity): O(1)**
+    *   只需要常數個變數儲存反轉後的數字。
+
+## 4. 程式碼實現與註解 (Code Implementation with Comments)
 
 ```python
 class Solution:
-  def isPalindrome(self, x: int) -> bool:
-    """
-    Checks if an integer is a palindrome.
-
-    A palindrome is a number that reads the same backward as forward.
-    Negative numbers are not considered palindromes.
-    """
-    # 根據我們剛剛的分析，先把不可能是回文數的情況排除
-    if x < 0 or (x % 10 == 0 and x != 0):
-      return False
-
-    # 最 Pythonic 的方法：轉換成字串並與它的反轉版本比較
-    s = str(x)
-    return s == s[::-1]
+    def isPalindrome(self, x: int) -> bool:
+        # 排除所有負數，以及最後一位是 0 的正整數（因為第一位不可能為 0，除非是 0 本身）
+        if x < 0 or (x % 10 == 0 and x != 0):
+            return False
+        
+        reversed_half = 0
+        
+        # 將數字 x 的後半段取出並反轉
+        # 當 x <= reversed_half 時，表示我們已經處理到中間位置了
+        while x > reversed_half:
+            # 取出 x 的個位數
+            last_digit = x % 10
+            # 將這個數字加到反轉變數中
+            reversed_half = reversed_half * 10 + last_digit
+            # 將 x 的最後一位移除
+            x //= 10
+            
+        # 如果數字是偶數位數（例如 1221），最後 x=12, reversed_half=12
+        # 如果數字是奇數位數（例如 121），最後 x=1, reversed_half=12
+        # 在奇數情況下，中間的數字 2 被存在 reversed_half 的個位，
+        # 我們可以用 reversed_half // 10 把這個中間位去掉，再跟 x 比較
+        return x == reversed_half or x == reversed_half // 10
 ```
-
-### 另一種思路 (純數學解法)
-
-當然，如果你想挑戰一下自己，也可以用純數學的方法來解，完全不轉換成字串。
-
-思路是：
-1.  建立一個新的變數 `revertedNumber`。
-2.  透過迴圈，不斷地從原數字 `x` 的末尾取一個數字 (`pop = x % 10`)，然後加到 `revertedNumber` 的末尾 (`revertedNumber = revertedNumber * 10 + pop`)。
-3.  同時，原數字 `x` 不斷地移除末位數 (`x //= 10`)。
-4.  當 `x` 小於或等於 `revertedNumber` 時，表示我們已經處理到數字的中間了，迴圈可以停止。
-5.  最後比較 `x` 和 `revertedNumber` 是否相等。
-
-這種方法效能更高，因為不涉及型別轉換，但在 Python 中，除非對效能有極致要求，否則字串法因為其簡潔性而更受歡迎。
-
-希望這個解釋對你有幫助！下一題見！

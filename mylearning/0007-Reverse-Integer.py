@@ -1,20 +1,17 @@
 class Solution:
     def reverse(self, x: int) -> int:
-        result = 0
-        positive = x > 0
-        if not positive:
-            x = x * -1
-
-        while x!=0:
-            y = x % 10
-            x = x // 10
-
-            result = result* 10 + y
+        sign = -1 if x < 0 else 1
+        x = abs(x)
+        res = 0
         
-        if result >= 2**31 -1 or result < -2**31:
-            return 0 
+        while x != 0:
+            res = res * 10 + (x % 10)
+            x //= 10
+            
+        res *= sign
         
-        if not positive:
-            return -1 * result
-        
-        return result
+        # 32-bit signed integer range: [-2^31, 2^31 - 1]
+        if res < -2**31 or res > 2**31 - 1:
+            return 0
+            
+        return res

@@ -1,20 +1,14 @@
 class Solution:
     def lengthOfLongestSubstring(self, s: str) -> int:
-
-        queue = set()
+        char_map = {}
         left = 0
-        result = 0
-
-        for right in range(len(s)):
-            current_chart = s[right]
-
-            while current_chart in queue:
-                queue.remove(s[left])
-                left += 1
-
-
-            queue.add(current_chart)
-
-            result = max(result, len(queue))
-
-        return result
+        max_len = 0
+        
+        for right, char in enumerate(s):
+            if char in char_map and char_map[char] >= left:
+                left = char_map[char] + 1
+            
+            char_map[char] = right
+            max_len = max(max_len, right - left + 1)
+            
+        return max_len
