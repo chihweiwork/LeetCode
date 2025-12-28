@@ -1,65 +1,99 @@
-# 0012. Integer to Roman
+# LeetCode #12 - Integer to Roman (整數轉羅馬數字) 教學
+
+嗨，同學！這次我們來解 LeetCode 第 12 題，一個跟數字系統轉換相關的有趣問題。我們要將我們熟悉的阿拉伯數字轉換成古老的羅馬數字。
+
+## 1. 題目理解
+
+首先，我們得複習一下羅馬數字的規則。它由七個基本字符代表：
+-   `I` = 1
+-   `V` = 5
+-   `X` = 10
+-   `L` = 50
+-   `C` = 100
+-   `D` = 500
+-   `M` = 1000
+
+通常，數字是從大到小排列，然後相加。例如 `II` 是 2，`XII` 是 12。
+
+但有幾個**特殊規則**，也就是**減法規則**：
+-   `I` 可以放在 `V` (5) 和 `X` (10) 的左邊，表示 `5-1=4` (`IV`) 和 `10-1=9` (`IX`)。
+-   `X` 可以放在 `L` (50) 和 `C` (100) 的左邊，表示 `50-10=40` (`XL`) 和 `100-10=90` (`XC`)。
+-   `C` 可以放在 `D` (500) 和 `M` (1000) 的左邊，表示 `500-100=400` (`CD`) 和 `1000-100=900` (`CM`)。
+
+我們的任務就是寫一個程式，輸入一個 `1` 到 `3999` 之間的整數，輸出它對應的羅馬數字字串。
+
+## 2. 思考過程 & 演算法選擇
+
+這種類型的轉換問題，有一個非常有效又直觀的演算法：**貪心法 (Greedy Algorithm)**。
+
+什麼是貪心法？就是「**每一步都做出當下看起來最好的選擇**」。
+
+在這個問題裡，最好的選擇就是「**從剩下的數字中，減去最大面額的羅馬數字**」。
+
+舉個例子，假設我們要轉換 `1994`：
+1.  我們手上的數字是 `1994`。能減的最大面額是什麼？是 `1000` (`M`)。
+    -   減去 `1000`，剩下 `994`。結果字串是 `"M"`。
+2.  現在數字是 `994`。能減的最大面額是什麼？是 `900` (`CM`)。
+    -   減去 `900`，剩下 `94`。結果字串是 `"M" + "CM"` -> `"MCM"`。
+3.  現在數字是 `94`。能減的最大面額是什麼？是 `90` (`XC`)。
+    -   減去 `90`，剩下 `4`。結果字串是 `"MCM" + "XC"` -> `"MCMXC"`。
+4.  現在數字是 `4`。能減的最大面額是什麼？是 `4` (`IV`)。
+    -   減去 `4`，剩下 `0`。結果字串是 `"MCMXC" + "IV"` -> `"MCMXCIV"`。
+5.  數字變成 `0` 了，轉換結束！
+
+看到了嗎？我們不斷地從數字中「貪心地」咬掉最大的一塊，直到數字變成 0。
+
+為了實現這個演算法，我們需要一個「**面額表**」。這個表的關鍵在於：
+-   它必須**從大到小**排列。
+-   它必須**包含所有基本符號和那 6 個特殊的減法組合**。
+
+所以，我們的面額表長這樣：
+-   1000: "M"
+-   900: "CM"
+-   500: "D"
+-   400: "CD"
+-   ...
+-   4: "IV"
+-   1: "I"
+
+演算法步驟：
+1.  建立一個包含 (數值, 符號) 的對應列表，從大到小排序。
+2.  建立一個空陣列或空字串 `result` 用於存放結果。
+3.  遍歷這個列表。對於每一個 (數值, 符號)：
+    a. 使用 `while` 迴圈，判斷目前的數字 `num` 是否大於等於這個數值。
+    b. 如果是，就把對應的符號加到 `result` 中，然後從 `num` 中減去這個數值。
+    c. 重複 a, b 直到 `num` 小於這個數值。
+4.  遍歷完畢後，`result` 就是我們的答案。
+
+這個方法邏輯清晰，而且因為數字範圍不大，執行效率非常高。
+
+## 3. 程式碼實現
+
+這是在 `mylearning/0012-Integer-to-Roman.py` 中的解答：
 
 ```python
-'''
-Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.
-
-Symbol       Value
-I             1
-V             5
-X             10
-L             50
-C             100
-D             500
-M             1000
-
-For example, two is written as II in Roman numeral, just two one's added together. Twelve is written as, XII, which is simply X + II. The number twenty seven is written as XXVII, which is XX + V + II.
-
-Roman numerals are usually written largest to smallest from left to right. However, the numeral for four is not IIII. Instead, the number four is written as IV. Because the one is before the five we subtract it making four. The same principle applies to the number nine, which is written as IX. There are six instances where subtraction is used:
-
-    I can be placed before V (5) and X (10) to make 4 and 9. 
-    X can be placed before L (50) and C (100) to make 40 and 90. 
-    C can be placed before D (500) and M (1000) to make 400 and 900.
-
-Given an integer, convert it to a roman numeral. Input is guaranteed to be within the range from 1 to 3999.
-
-Example 1:
-
-Input: 3
-Output: "III"
-
-Example 2:
-
-Input: 4
-Output: "IV"
-
-Example 3:
-
-Input: 9
-Output: "IX"
-
-Example 4:
-
-Input: 58
-Output: "LVIII"
-Explanation: L = 50, V = 5, III = 3.
-
-Example 5:
-
-Input: 1994
-Output: "MCMXCIV"
-Explanation: M = 1000, CM = 900, XC = 90 and IV = 4.
-'''
 class Solution:
-    def intToRoman(self, num: int) -> str:
-        d = {1000: 'M', 900: 'CM', 500: 'D', 400: 'CD', 100: 'C', 90: 'XC', 50: 'L', 40: 'XL', 10: 'X', 9: 'IX', 5: 'V', 4: 'IV', 1: 'I'} 
+  def intToRoman(self, num: int) -> str:
+    # 建立一個從大到小排序的 (數值, 符號) 列表
+    # 關鍵是把減法規則也當成一種獨立的「面額」
+    value_symbols = [
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"),
+        (1, "I")
+    ]
+    
+    roman_numeral = []
+    
+    # 貪心演算法：從最大的面額開始減
+    for val, symbol in value_symbols:
+      # 看這個面額能減幾次
+      while num >= val:
+        # 每減一次，就加上對應的符號
+        roman_numeral.append(symbol)
+        num -= val
         
-        res = ''
-        
-        for i in d:
-            res += (num // i) * d[i]
-            num %= i
-        
-        return res
-
+    return "".join(roman_numeral)
 ```
+
+這就是貪心演算法的威力！是不是比想像中簡單呢？好好體會一下，下一題見！

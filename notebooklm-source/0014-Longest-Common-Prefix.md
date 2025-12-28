@@ -1,52 +1,107 @@
-# 0014. Longest Common Prefix
+# LeetCode #14 - Longest Common Prefix (最長共同前綴) 教學
+
+嗨，同學！今天我們要解的是 LeetCode 第 14 題。這是一個處理字串的常見問題，目標是從一堆字串中，找出它們開頭共通的部分。
+
+## 1. 題目理解
+
+題目給我們一個字串陣列 `strs`，我們要找出所有字串的「最長共同前綴」。
+
+例如：
+-   `["flower", "flow", "flight"]`
+    -   `"f"` 是它們的共同前綴。
+    -   `"fl"` 也是。
+    -   `"flo"` 不是了，因為 `flight` 的第三個字母是 `i`。
+    -   所以，最長的共同前綴就是 `"fl"`。
+-   `["dog", "racecar", "car"]`
+    -   這三個字串開頭第一個字母就不同，所以它們沒有共同前綴，答案是 `""` (空字串)。
+
+如果輸入的陣列是空的，或者只有一個字串，也要能正確處理。
+
+## 2. 思考過程 & 演算法選擇
+
+這個問題有好幾種解法，我們來看看哪種最適合。
+
+### 方法一：垂直掃描 (Vertical Scanning)
+
+這是非常直覺的一個方法，就像我們人眼比對一樣。
+1.  我們以**第一個字串** `"flower"` 為基準。
+2.  先看所有字串的**第 0 個**字元：`f` vs `f` vs `f`，都一樣，很好，共同前綴至少有 `"f"`。
+3.  再看所有字串的**第 1 個**字元：`l` vs `l` vs `l`，也都一樣，共同前綴更新為 `"fl"`。
+4.  再看所有字串的**第 2 個**字元：`o` vs `o` vs `i`，哎呀，出現不一樣的了！
+5.  比對終止。我們找到的最長共同前綴就是 `"fl"`。
+
+演算法步驟：
+1.  如果陣列為空，直接回傳 `""`。
+2.  用一個外層迴圈遍歷第一個字串的每一個字元 (index `i`)。
+3.  在裡面用一個內層迴圈遍歷**剩下**的所有字串 (從第二個到最後一個)。
+4.  在內層迴圈中，比較第 `j` 個字串的第 `i` 個字元是否和第一個字串的第 `i` 個字元相同。同時要檢查 index `i` 是否超出了第 `j` 個字串的長度。
+5.  一旦發現不相同或 index 超出範圍，就表示共同前綴到此為止，回傳第一個字串從頭到 `i` 的部分 `strs[0][:i]`。
+6.  如果外層迴圈跑完了都沒問題，表示第一個字串本身就是最長共同前綴，直接回傳第一個字串。
+
+這個方法的時間複雜度是 O(S)，其中 S 是所有字串的字元總數。空間複雜度是 O(1)。這是個很穩健的作法。
+
+### 方法二：排序後比較頭尾 (Sort and Compare)
+
+這是一個非常聰明且 Pythonic 的方法，利用了排序的特性。
+
+你想想，如果我們把字串陣列 `["flower", "flow", "flight"]` 按照字典順序排序，會得到什麼？
+-   `["flight", "flow", "flower"]`
+
+排完序之後，**第一個字串 (`"flight"`)** 和 **最後一個字串 (`"flower"`)** 會是這個陣列中「差異最大」的兩個。
+
+這意味著，如果連這兩個差異最大的字串都有共同前綴，那麼夾在中間的所有字串也必然擁有這個共同前綴！
+
+所以，問題被簡化為：**找出排序後的第一個和最後一個字串的共同前綴**。
+
+演算法步驟：
+1.  如果陣列為空，回傳 `""`。
+2.  將字串陣列 `strs` 進行排序。
+3.  取出排序後的第一個字串 `first_str` 和最後一個字串 `last_str`。
+4.  遍歷這兩個字串的字元 (從 0 到 `min(len(first_str), len(last_str)) - 1`)。
+5.  比較對應位置的字元是否相同。
+    -   如果相同，就繼續。
+    -   如果不同，那麼共同前綴就到前一個位置為止。回傳 `first_str` 的對應部分。
+6.  如果迴圈跑完了都相同，表示較短的那個字串本身就是共同前綴。
+
+這個方法非常簡潔，程式碼也很乾淨。它的時間複雜度主要由排序決定，是 O(S log n)，其中 S 是平均字串長度，n 是字串數量。在很多情況下，它的表現都非常好。
+
+## 3. 程式碼實現
+
+我們採用方法二，因為它很優雅。這是在 `mylearning/0014-Longest-Common-Prefix.py` 中的解答：
 
 ```python
-'''
-Write a function to find the longest common prefix string amongst an array of strings.
-
-If there is no common prefix, return an empty string "".
-
- 
-
-Example 1:
-
-Input: strs = ["flower","flow","flight"]
-Output: "fl"
-Example 2:
-
-Input: strs = ["dog","racecar","car"]
-Output: ""
-Explanation: There is no common prefix among the input strings.
- 
-
-Constraints:
-
-1 <= strs.length <= 200
-0 <= strs[i].length <= 200
-strs[i] consists of only lowercase English letters.
-'''
-
-# Method 1 (Comparing each String)
+from typing import List
 
 class Solution:
-    def longestCommonPrefix(self, strs: List[str]) -> str:
-        if not strs:
-            return ""
-        lcp = strs[0]
-        for index in range(1, len(strs)):
-            lcp = self.sub_compare(lcp, strs[index])
-            if not lcp:
-                return ""
-        return lcp
+  def longestCommonPrefix(self, strs: List[str]) -> str:
+    """
+    找出字串陣列中的最長共同前綴。
+    這個聰明的解法是先將陣列排序。排序後，
+    所有字串的共同前綴，其實就是第一個和最後一個字串的共同前綴。
+    """
+    if not strs:
+      return ""
+      
+    # 排序字串列表
+    # e.g., ["flower", "flow", "flight"] -> ["flight", "flow", "flower"]
+    strs.sort()
+    
+    # 排序後，差異最大的就是第一個和最後一個字串
+    # 它們的共同前綴就是所有字串的共同前綴
+    first_str = strs[0]
+    last_str = strs[-1]
+    
+    common_prefix = []
+    
+    # 遍歷較短字串的長度
+    for i in range(min(len(first_str), len(last_str))):
+      if first_str[i] == last_str[i]:
+        common_prefix.append(first_str[i])
+      else:
+        # 一旦遇到不匹配的字符，就停止
+        break
         
-    def sub_compare(self, s1, s2):
-        res = ""
-        if len(s2) < len(s1):
-            s1, s2 = s2, s1
-        for index, char in enumerate(s1):
-            if char == s2[index]:
-                res += char
-            else:
-                break
-        return res
+    return "".join(common_prefix)
 ```
+
+這個解法是不是讓你覺得「哇，原來可以這樣想！」。這就是演算法的樂趣所在。我們下一題見！

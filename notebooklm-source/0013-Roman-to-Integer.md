@@ -1,90 +1,101 @@
-# 0013. Roman to Integer
+# LeetCode #13 - Roman to Integer (羅馬數字轉整數) 教學
+
+嗨，同學！歡迎回來！這次我們要解的是 LeetCode 第 13 題，剛好和上一題完全相反，我們要將羅馬數字轉回我們熟悉的整數。
+
+## 1. 題目理解
+
+我們需要寫一個程式，輸入一個羅馬數字字串，輸出它代表的整數。
+
+同樣地，關鍵在於如何處理那 6 種特殊的**減法規則**：
+-   `IV` = 4
+-   `IX` = 9
+-   `XL` = 40
+-   `XC` = 90
+-   `CD` = 400
+-   `CM` = 900
+
+在這些組合中，一個較小值的符號出現在較大值的符號**左邊**。而在一般的加法規則中，符號是從大到小排列的，例如 `VI` (6) 或 `XI` (11)。
+
+## 2. 思考過程 & 演算法選擇
+
+我們的目標是從左到右讀取這個字串，並累加出總和。挑戰在於如何判斷何時該做加法，何時該做減法。
+
+讓我們觀察一下規律：
+-   `VI` (5, 1): `V` > `I`，是加法，結果是 `5 + 1 = 6`。
+-   `IV` (1, 5): `I` < `V`，是減法，結果是 `5 - 1 = 4`。
+
+規律出來了！當我們從左到右看一對相鄰的符號時：
+-   如果**左邊的符號代表的值 >= 右邊的符號代表的值**，那麼左邊的符號值就直接**加**到總和中。
+-   如果**左邊的符號代表的值 < 右邊的符號代表的值**，這就觸發了減法規則！我們應該從總和中**減去**左邊的符號值。
+
+### 方法一：從左到右，判斷後一個字符
+
+我們可以從左到右遍歷字串，在每個位置 `i`，都去偷看一下 `i+1` 的位置。
+
+1.  建立一個符號到數值的對應表 (Map/Dictionary)，例如 `{'I': 1, 'V': 5, ...}`。
+2.  初始化總和 `total = 0`。
+3.  用一個 `while` 迴圈遍歷字串。
+4.  在迴圈中，檢查當前位置 `i` 的符號值是否小於下一個位置 `i+1` 的符號值。
+    -   **是 (例如 `I` 和 `V` in "IV")**：這是一個減法組合。我們將 `(value[i+1] - value[i])` 加到總和中，並且因為我們一次處理了兩個字符，所以指針 `i` 要前進兩步。
+    -   **否 (例如 `V` 和 `I` in "VI")**：這是一個正常的加法。我們將 `value[i]` 加到總和中，指針 `i` 前進一步。
+5.  迴圈結束後 `total` 就是答案。
+
+這個方法很直觀，完全模擬了我們讀取羅馬數字的過程。
+
+### 方法二：更巧妙的思路 (從左到右，加減判斷)
+
+還有一個更簡潔的思路。我們依然從左到右遍歷。
+
+1.  建立符號對應表。
+2.  初始化 `total = 0`。
+3.  遍歷字串（除了最後一個字符）。對於每個字符 `s[i]`：
+    -   如果 `value[s[i]] < value[s[i+1]]`，說明 `s[i]` 是一個減數，所以從 `total` 中**減去** `value[s[i]]`。
+    -   否則，`s[i]` 是一個加數，將 `value[s[i]]` **加上**去。
+4.  遍歷結束後，**不要忘了把最後一個字符的值加上去**！因為最後一個字符右邊沒有東西了，它永遠只能是加數。
+
+舉例 `MCMXCIV` (1994):
+- M (1000), C (100): 1000 > 100, `total = 1000`
+- C (100), M (1000): 100 < 1000, `total = 1000 - 100 = 900`
+- M (1000), X (10): 1000 > 10, `total = 900 + 1000 = 1900`
+- X (10), C (100): 10 < 100, `total = 1900 - 10 = 1890`
+- C (100), I (1): 100 > 1, `total = 1890 + 100 = 1990`
+- I (1), V (5): 1 < 5, `total = 1990 - 1 = 1989`
+- 最後，加上 V (5): `total = 1989 + 5 = 1994`。正確！
+
+方法一更像是「一組一組」地看，方法二則是「一個一個」地判斷。我個人覺得方法一的邏輯更符合「一次處理一個單位」的思維，所以下面的程式碼採用方法一。
+
+## 3. 程式碼實現
+
+這是在 `mylearning/0013-Roman-to-Integer.py` 中的解答（採用方法一）：
 
 ```python
-'''
-Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.
-
-Symbol       Value
-I             1
-V             5
-X             10
-L             50
-C             100
-D             500
-M             1000
-
-For example, two is written as II in Roman numeral, just two one's added together. Twelve is written as, XII, which is simply X + II. The number twenty seven is written as XXVII, which is XX + V + II.
-
-Roman numerals are usually written largest to smallest from left to right. However, the numeral for four is not IIII. Instead, the number four is written as IV. Because the one is before the five we subtract it making four. The same principle applies to the number nine, which is written as IX. There are six instances where subtraction is used:
-
-    I can be placed before V (5) and X (10) to make 4 and 9. 
-    X can be placed before L (50) and C (100) to make 40 and 90. 
-    C can be placed before D (500) and M (1000) to make 400 and 900.
-
-Given a roman numeral, convert it to an integer. Input is guaranteed to be within the range from 1 to 3999.
-
-Example 1:
-
-Input: "III"
-Output: 3
-
-Example 2:
-
-Input: "IV"
-Output: 4
-
-Example 3:
-
-Input: "IX"
-Output: 9
-
-Example 4:
-
-Input: "LVIII"
-Output: 58
-Explanation: L = 50, V= 5, III = 3.
-
-Example 5:
-
-Input: "MCMXCIV"
-Output: 1994
-Explanation: M = 1000, CM = 900, XC = 90 and IV = 4.
-'''
-# Time Complexity: O(n)
-# Space Complexity: O(1)
-
-# Method 1
-
 class Solution:
-    def romanToInt(self, s: str) -> int:
+  def romanToInt(self, s: str) -> int:
+    # 建立符號到數值的對應表
+    roman_map = {
+        'I': 1, 'V': 5, 'X': 10, 'L': 50,
+        'C': 100, 'D': 500, 'M': 1000
+    }
+    
+    total = 0
+    i = 0
+    
+    while i < len(s):
+      # 檢查是否為減法情況：當前字符比下一個小，且不是最後一個字符
+      if i + 1 < len(s) and roman_map[s[i]] < roman_map[s[i+1]]:
+        # 這是一組減法，例如 'IV'
+        # 我們把 (下一個值 - 當前值) 加到總和
+        total += roman_map[s[i+1]] - roman_map[s[i]]
+        # 因為一次處理了兩個字符，指針前進 2
+        i += 2
+      else:
+        # 這是一個正常的加法情況
+        # 直接加上當前字符的值
+        total += roman_map[s[i]]
+        # 指針前進 1
+        i += 1
         
-        symbol_value = {'I' : 1, 'V' : 5, 'X' : 10, 'L' : 50, 'C' : 100, 'D' : 500, 'M' : 1000}
-        
-        result = 0
-        
-        for i in range(len(s)):
-            
-            if i > 0 and symbol_value[s[i]] > symbol_value[s[i - 1]]:
-                
-                result += symbol_value[s[i]] - 2 * (symbol_value[s[i - 1]])
-            
-            else:
-                
-                result += symbol_value[s[i]]
-                
-        return result
-
-# Method 2 (Checking the value of next character and subtracting if more than the current character and adding if less)
-
-class Solution:
-    def romanToInt(self, s: str) -> int:
-        roman_numerals = {'I':1, 'V':5, 'X':10, 'L':50, 'C':100, 'D':500, 'M':1000}
-        
-        res = 0
-        for index in range(len(s) - 1):
-            if roman_numerals[s[index]] < roman_numerals[s[index + 1]]:
-                res -= roman_numerals[s[index]]
-            else:
-                res += roman_numerals[s[index]]
-        return res + roman_numerals[s[-1]]
+    return total
 ```
+
+你會發現，把規則想清楚後，程式碼的邏輯就非常直接了。恭喜你又解決了一題！

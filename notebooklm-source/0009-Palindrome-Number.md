@@ -1,49 +1,69 @@
-# 0009. Palindrome Number
+# LeetCode #9 - Palindrome Number (回文數) 教學
+
+嗨，同學！今天我們要來解 LeetCode 第 9 題：Palindrome Number。這是一個很經典的入門題，可以幫助我們釐清對問題的定義和思考邊界條件。
+
+## 1. 題目理解
+
+首先，我們要弄清楚什麼是「回文數」。
+
+回文的意思是「正著讀跟反著讀都一樣」。例如，`121` 倒過來還是 `121`，所以它就是一個回文數。但 `123` 倒過來是 `321`，它們不一樣，所以 `123` 就不是回文數。
+
+題目有幾個特別的提示：
+-   **負數**：例如 `-121`。倒過來會變成 `121-`，這跟 `-121` 完全不同，所以題目暗示負數一律不是回文數。
+-   **結尾是 0 的數字**：例如 `10`。倒過來是 `01`，也就是 `1`。`10` 和 `1` 不相等，所以它也不是回文數。唯一的例外是 `0` 本身，`0` 倒過來還是 `0`，所以 `0` 是回文數。
+
+## 2. 思考過程 & 演算法選擇
+
+好，現在我們來想想要怎麼用程式解決這個問題。
+
+我們的目標是：**比對一個數字和它反轉後的樣子是否相同。**
+
+最直覺、也最符合 Python 精神 (Pythonic) 的方法是什麼呢？就是把數字當成「文字」來處理！
+
+1.  **處理邊界情況 (Edge Cases)**：根據我們剛剛的分析，我們可以先把那些肯定不是回文數的情況過濾掉，這樣可以讓程式更有效率，邏輯也更清楚。
+    -   如果數字是負數 (`x < 0`)，直接回傳 `False`。
+    -   如果數字的最後一位是 `0`，且這個數字不為 `0` 本身 (`x % 10 == 0 and x != 0`)，那它也不可能是回文數，直接回傳 `False`。
+
+2.  **核心演算法 - 轉換成字串**：
+    -   把數字轉換成字串。例如，整數 `121` 變成字串 `"121"`。
+    -   在 Python 中，反轉一個字串非常簡單，我們可以使用切片 (slicing) `[::-1]`。`"121"[::-1]` 就會得到 `"121"`。
+    -   最後，我們只需要比較原來的字串和反轉後的字串是否相等。如果相等，它就是回文數！
+
+這個方法非常簡單直接，程式碼也很乾淨，可讀性超高。在 Python 中，這通常是解決這類問題的首選。
+
+## 3. 程式碼實現
+
+這是在 `mylearning/0009-Palindrome-Number.py` 中的解答：
 
 ```python
-#https://leetcode.com/problems/palindrome-number/
-
-# Determine whether an integer is a palindrome. An integer is a palindrome when it reads the same backward as forward.
-
-# Example 1:
-# Input: 121
-# Output: true
-
-# Example 2:
-# Input: -121
-# Output: false
-# Explanation: From left to right, it reads -121. From right to left, it becomes 121-. Therefore it is not a palindrome.
-
-# Example 3:
-# Input: 10
-# Output: false
-# Explanation: Reads 01 from right to left. Therefore it is not a palindrome.
-
-# Follow up:
-# Coud you solve it without converting the integer to a string?
-
-# Method 1 (Meeting in the Middle and Comparing)
-
 class Solution:
-    def isPalindrome(self, x: int) -> bool:
-        if (x<0 or (x%10 == 0 and x!=0)): #Negative or Ending with 0 but not 0 cases
-            return False
-        rev = 0
-        while(x>rev):
-            rev = (rev*10)+(x%10)
-            x=x//10
-        return rev==x or rev//10==x #Removing middle digit from a number with odd length using rev//10
-        
-# Method 2 (Reversing and Comparing)
+  def isPalindrome(self, x: int) -> bool:
+    """
+    Checks if an integer is a palindrome.
 
-class Solution:
-    def isPalindrome(self, x: int) -> bool:
-        if x < 0 or (x != 0 and not (x % 10)):
-            return False
-        integer, res = x, 0
-        while integer > 0:
-            res = res * 10 + (integer % 10)
-            integer //= 10
-            print(res)
-        return res == x
+    A palindrome is a number that reads the same backward as forward.
+    Negative numbers are not considered palindromes.
+    """
+    # 根據我們剛剛的分析，先把不可能是回文數的情況排除
+    if x < 0 or (x % 10 == 0 and x != 0):
+      return False
+
+    # 最 Pythonic 的方法：轉換成字串並與它的反轉版本比較
+    s = str(x)
+    return s == s[::-1]
 ```
+
+### 另一種思路 (純數學解法)
+
+當然，如果你想挑戰一下自己，也可以用純數學的方法來解，完全不轉換成字串。
+
+思路是：
+1.  建立一個新的變數 `revertedNumber`。
+2.  透過迴圈，不斷地從原數字 `x` 的末尾取一個數字 (`pop = x % 10`)，然後加到 `revertedNumber` 的末尾 (`revertedNumber = revertedNumber * 10 + pop`)。
+3.  同時，原數字 `x` 不斷地移除末位數 (`x //= 10`)。
+4.  當 `x` 小於或等於 `revertedNumber` 時，表示我們已經處理到數字的中間了，迴圈可以停止。
+5.  最後比較 `x` 和 `revertedNumber` 是否相等。
+
+這種方法效能更高，因為不涉及型別轉換，但在 Python 中，除非對效能有極致要求，否則字串法因為其簡潔性而更受歡迎。
+
+希望這個解釋對你有幫助！下一題見！
